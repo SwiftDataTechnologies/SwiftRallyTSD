@@ -1,0 +1,96 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+    <title>Coodriver Screen</title>
+    <link rel=stylesheet type="text/css" href="/static/style.css">
+    <script type="text/javascript" src="/static/jquery-1.4.2.min.js"></script>
+    <script type="text/javascript" src="/static/socket.io.min.js"></script>
+    <script type="text/javascript" charset="utf-8">
+        $(document).ready(function(){
+            namespace = '/test'; // change to an empty string to use the global namespace
+
+            // the socket.io documentation recommends sending an explicit package upon connection
+            // this is specially important when using the global namespace
+            var socket = io.connect('http://' + document.domain + ':' + location.port + namespace);
+
+            // event handler for server sent data
+            socket.on('sdt data', function(displayData) {
+                console.log('Updating sdt data.')
+                fields = ["t", "tdelta", "x", "xTgt", "xNav", "v", "vAve", "vAveTgt", "numWypt"];
+                for (i = 0; i < fields.length; i++) {
+                    $('#f' + fields[i]).text($('<div/>').text(fields[i] + ': ' + displayData[fields[i]]).html());
+                }
+                for (i = 0; i < displayData.wypts.length; i++) {
+                    $('#wypt' + i).text($('<div/>').text(i + ' | ' + displayData.wypts[i][0] + " | " +  displayData.wyptTgtTime[i]).html());
+                }
+            });
+
+            // event handler for new connections
+            socket.on('connect', function() {
+                socket.emit('my event', {data: 'I\'m connected!'});
+            });
+
+            // handlers for the different forms in the page
+            // these send data to the server in a variety of ways
+            $('form#settime').submit(function(event) {
+                timestring = $('input#time_data').val()
+                console.log('Sending:' + timestring)
+                socket.emit('set time', timestring);
+                return false;
+            });
+            $('form#echo').submit(function(event) {
+                socket.emit('my event', {data: $('#echo_data').val()});
+                $('#rb').append('<br>' + $('#echo_data').val());
+                $('input#echo_data').val('') // Reset text input
+                return false;
+            });
+            $('form#start').submit(function(event) {
+                socket.emit('start', 'dummy string');
+                return false;
+            });
+            $('form#broadcast').submit(function(event) {
+                socket.emit('my broadcast event', {data: $('#broadcast_data').val()});
+                return false;
+            });
+            $('form#zeroodo').submit(function(event) {
+                console.log('Zeroing ODO.')
+                socket.emit('zero odo', 'dummy string');
+                return false;
+            });
+            $('form#loadwypt').submit(function(event) {
+                socket.emit('load waypoints', 'dummy string');
+                return false;
+            });
+            $('form#wyptButton').click(function(event) {
+                numWaypoint = $(this).context[0].getAttribute('value')
+                console.log('Setting waypoint ' + numWaypoint)
+                socket.emit('set waypoint', numWaypoint);
+                return false;
+            });
+        });
+        // Full screen when clicking
+        /*addEventListener("click", function() {
+            var
+              el = document.documentElement
+            , rfs =
+                   el.requestFullScreen
+                || el.webkitRequestFullScreen
+                || el.mozRequestFullScreen
+            ;
+            rfs.call(el);
+        });*/
+    </script>
+</head>
+<body>
+    <h1>Flask-SocketIO Test</h1>
+
+    <form id="settime" method="POST" action='#'>
+        <input type="text" name="echo_data" id="time_data" placeholder="094906">
+        <input type="submit" value="Set Time HHMMSS">
+    </form>
+    <form id="setwaypoints" method="POST" action='#'>
+        <input type="text" name="echo_data" id="echo_data" placeholder="0 50 \n 4.12 \n 6.78 45">
+        <input type="submit" value="Input waypoints">
+    </form>
+</body>
+</html>

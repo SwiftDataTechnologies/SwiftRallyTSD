@@ -1,0 +1,109 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+    <title>Coodriver Screen</title>
+    <link rel=stylesheet type="text/css" href="/static/style.css">
+    <script type="text/javascript" src="/static/jquery-1.4.2.min.js"></script>
+    <script type="text/javascript" src="/static/socket.io.min.js"></script>
+    <script type="text/javascript" charset="utf-8">
+        $(document).ready(function(){
+            namespace = '/test'; // change to an empty string to use the global namespace
+
+            // the socket.io documentation recommends sending an explicit package upon connection
+            // this is specially important when using the global namespace
+            var socket = io.connect('http://' + document.domain + ':' + location.port + namespace);
+
+            // event handler for server sent data
+            socket.on('sdt data', function(displayData) {
+                console.log('Updating sdt data.')
+                fields = ["t", "tdelta", "x", "xTgt", "xNav", "v", "vAve", "vAveTgt", "numWypt"];
+                for (i = 0; i < fields.length; i++) {
+                    $('#f' + fields[i]).text($('<div/>').text(fields[i] + ': ' + displayData[fields[i]]).html());
+                }
+                for (i = 0; i < displayData.wypts.length; i++) {
+                    $('#wypt' + i).text($('<div/>').text(i + ' | ' + displayData.wypts[i][0] + " | " +  displayData.wyptTgtTime[i]).html());
+                }
+            });
+
+            // event handler for new connections
+            socket.on('connect', function() {
+                socket.emit('my event', {data: 'I\'m connected!'});
+            });
+
+            // handlers for the different forms in the page
+            // these send data to the server in a variety of ways
+            $('form#echo').submit(function(event) {
+                socket.emit('my event', {data: $('#echo_data').val()});
+                $('#rb').append('<br>' + $('#echo_data').val());
+                $('input#echo_data').val('') // Reset text input
+                return false;
+            });
+            $('form#start').submit(function(event) {
+                socket.emit('start', 'dummy string');
+                return false;
+            });
+            $('form#broadcast').submit(function(event) {
+                socket.emit('my broadcast event', {data: $('#broadcast_data').val()});
+                return false;
+            });
+            $('form#zeroodo').submit(function(event) {
+                console.log('Zeroing ODO.')
+                socket.emit('zero odo', 'dummy string');
+                return false;
+            });
+            $('form#loadwypt').submit(function(event) {
+                socket.emit('load waypoints', 'dummy string');
+                return false;
+            });
+            $('form#wyptButton').click(function(event) {
+                numWaypoint = $(this).context[0].getAttribute('value')
+                console.log('Setting waypoint ' + numWaypoint)
+                socket.emit('set waypoint', numWaypoint);
+                return false;
+            });
+        });
+        // Full screen when clicking
+        /*addEventListener("click", function() {
+            var
+              el = document.documentElement
+            , rfs =
+                   el.requestFullScreen
+                || el.webkitRequestFullScreen
+                || el.mozRequestFullScreen
+            ;
+            rfs.call(el);
+        });*/
+    </script>
+</head>
+<body>
+    <h1>Flask-SocketIO Test</h1>
+
+    <form id="echo" method="POST" action='#'>
+        <input type="text" name="echo_data" id="echo_data" placeholder="km avg">
+        <input type="submit" value="Echo">
+    </form>
+    <form id="start" method="POST" action="#">
+        <input type="submit" value="Start!">
+    </form>
+    <form id="zeroodo" method="POST" action="#">
+        <input type="submit" value="Zero ODO">
+    </form>
+    <form id="loadwypt" method="POST" action="#">
+        <input type="submit" value="Load Waypoints">
+    </form>
+    <h2>Time</h2>
+    <div id="log"></div>
+
+    {% for i in ["t", "tdelta", "x", "xTgt", "xNav", "v", "vAve", "vAveTgt", "numWypt"] %}
+        <div id="f{{ i }}"></div>
+    {% endfor %}
+
+    <h2>Roadbook</h2>
+    {% for i in range(0,100) %}
+        <form id="wyptButton" method="POST" action="#">
+            <input type="submit" value="{{ i }}">
+        </form>
+        <div id="wypt{{ i }}">| </div>
+    {% endfor %}
+</body>
+</html>

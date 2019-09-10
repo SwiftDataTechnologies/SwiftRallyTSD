@@ -1,0 +1,46 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+    <title>Driver Screen</title>
+    <link rel=stylesheet type="text/css" href="/static/style.css">
+    <script type="text/javascript" src="/static/jquery-1.4.2.min.js"></script>
+    <script type="text/javascript" src="/static/socket.io.min.js"></script>
+    <script type="text/javascript" charset="utf-8">
+        $(document).ready(function(){
+            namespace = '/test'; // change to an empty string to use the global namespace
+
+            // the socket.io documentation recommends sending an explicit package upon connection
+            // this is specially important when using the global namespace
+            var socket = io.connect('http://' + document.domain + ':' + location.port + namespace);
+
+            // event handler for server sent data
+            socket.on('sdt data', function(displayData) {
+                console.log('Updating sdt data.')
+                fields = ["t", "tdelta", "x", "xTgt", "xNav", "v", "vAve", "vAveTgt", "numWypt"];
+                for (i = 0; i < fields.length; i++) {
+                    $('#driver_' + fields[i]).text($('<div/>').text(fields[i] + ': ' + displayData[fields[i]]).html());
+                }
+            });
+        });
+        // Full screen when clicking
+        addEventListener("click", function() {
+            var
+              el = document.documentElement
+            , rfs =
+                   el.requestFullScreen
+                || el.webkitRequestFullScreen
+                || el.mozRequestFullScreen
+            ;
+            rfs.call(el);
+        });
+    </script>
+</head>
+<body>
+    <h1>Driver Screen</h1>
+
+    {% for i in ["tdelta", "xTgt", "xNav", "v", "numWypt"] %}
+        <div id="driver_{{ i }}"></div>
+    {% endfor %}
+
+</body>
+</html>
