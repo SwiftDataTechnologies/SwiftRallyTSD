@@ -4,7 +4,7 @@
 # different async modes, or leave it set to None for the application to choose
 # the best option based on available packages.
 async_mode = 'gevent'
-bRPi = True
+bRPi = False
 
 if async_mode is None:
     try:
@@ -63,7 +63,7 @@ class SensorThreadClass(Thread):
     def run(self):
         GPIO.setmode(GPIO.BCM)
         GPIO.setwarnings(False)
-        print "*********** Sensor " + str(self.sensorid) + " is alive."
+        print("*********** Sensor " + str(self.sensorid) + " is alive.")
         GPIO.setup(self.sensorid, GPIO.IN, GPIO.PUD_UP)
         while True:
             time.sleep(0.001)
@@ -82,8 +82,8 @@ def background_thread():
     state = init_state_and_global()
     while True:
         time.sleep(0.3)
-        print "***********" + str(sensor_right.sensorid)
-        print "***********" + str(sensor_right.count)
+        print("***********" + str(sensor_right.sensorid))
+        print("***********" + str(sensor_right.count))
         state = integrate(state, read_sensors())
         socketio.emit('tsd data', display_data(state), namespace='/test')
 
@@ -263,7 +263,7 @@ def load_waypoints(message):
         else:
             globalData['wypts'][i][1] = globalData['wypts'][i][1] / 3.6
             currentAve = globalData['wypts'][i][1]
-    print globalData['wypts']
+    print(globalData['wypts'])
 
 
 @socketio.on('set waypoint', namespace='/test')
@@ -275,11 +275,11 @@ def set_waypoint(message):
 
 @socketio.on('set time', namespace='/test')
 def set_time(message):
-    print message
+    print(message)
     HH = message[0:2]
     MM = message[2:4]
     SS = message[4:6]
-    print 'sudo date -s "Mon Mar 14 ' + HH + ':' + MM + ':' + SS  + ' UTC 2016"'
+    print('sudo date -s "Mon Mar 14 ' + HH + ':' + MM + ':' + SS  + ' UTC 2016"')
     os.system('sudo date -s "Mon Mar 14 ' + HH + ':' + MM + ':' + SS  + ' UTC 2016"')
 
 
